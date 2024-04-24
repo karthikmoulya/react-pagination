@@ -1,58 +1,57 @@
 import { useEffect, useState } from 'react';
 
-function App() {
-  const PRODUCTS_PER_PAGE = 10;
+const App = () => {
   const [products, setProducts] = useState([]);
   const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
 
   const fetchProducts = async () => {
-    const res = await fetch('https://dummyjson.com/products');
+    const res = await fetch(
+      `https://dummyjson.com/products?limit=10&skip=${page * 10 - 10}`
+    );
     const data = await res.json();
+
     if (data && data.products) {
       setProducts(data.products);
+      setTotalPages(data.total);
+    }
+  };
+
+  const selectPageHandler = (selectedPage) => {
+    if (
+      selectedPage >= 1 &&
+      selectedPage <= totalPages &&
+      page !== selectedPage
+    ) {
+      setPage(selectedPage);
     }
   };
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [page]);
 
-  const selectPageHandler = (selectedPage) => {
-    if (
-      selectedPage >= 1 &&
-      selectedPage <= products.length / PRODUCTS_PER_PAGE
-    ) {
-      setPage(selectedPage);
-    }
-  };
   return (
     <div>
       {products.length > 0 && (
         <div className='products'>
-          {products
-            .slice(
-              page * PRODUCTS_PER_PAGE - PRODUCTS_PER_PAGE,
-              page * PRODUCTS_PER_PAGE
-            )
-            .map((prod) => {
-              return (
-                <span key={prod.id} className='products__single'>
-                  <img src={prod.thumbnail} alt={prod.title} />
-                  <span>{prod.description}</span>
-                </span>
-              );
-            })}
+          {products.map((product) => {
+            return (
+              <span key={product.id} className='products__single'>
+                <img src={product.thumbnail} alt={product.title} />
+                <span>{product.title}</span>
+              </span>
+            );
+          })}
         </div>
       )}
+
       {products.length > 0 && (
         <div className='pagination'>
-          <span
-            className={page > 1 ? '' : 'pagination__disable'}
-            onClick={() => selectPageHandler(page - 1)}
-          >
-            ◀️
-          </span>
-          {[...Array(products.length / PRODUCTS_PER_PAGE)].map((_, i) => {
+          {page > 1 && (
+            <span onClick={() => selectPageHandler(page - 1)}>◀️</span>
+          )}
+          {[...Array(totalPages / 10)].map((_, i) => {
             return (
               <span
                 key={i}
@@ -63,20 +62,13 @@ function App() {
               </span>
             );
           })}
-          <span
-            className={
-              page < products.length / PRODUCTS_PER_PAGE
-                ? ''
-                : 'pagination__disable'
-            }
-            onClick={() => selectPageHandler(page + 1)}
-          >
-            ▶️
-          </span>
+          {page < totalPages / 10 && (
+            <span onClick={() => selectPageHandler(page + 1)}>▶️</span>
+          )}
         </div>
       )}
     </div>
   );
-}
+};
 
 export default App;
